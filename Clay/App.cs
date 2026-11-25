@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Armature.DebugUi;
+using Armature.DebugUi.Passes;
 using Armature.Editor;
 using Armature.Input;
 using Armature.Rendering;
@@ -141,9 +142,10 @@ public sealed class App : IDisposable
 
         _renderer.AddPass(new OpaquePass(), RenderPhase.Scene);
 
-        _editorFeatures = new EditorRenderFeature(_renderer, _context, _pipelineManager, _editorDescriptors);
+        _editorFeatures = new EditorRenderFeature(_renderer, _context, _pipelineManager, _coreDescriptors, _editorDescriptors);
 
         _renderer.AddPass(new ImGuiPass(_imGuiManager), RenderPhase.Overlay);
+        _renderer.AddPass(new PresentPass(_pipelineManager.GetPipeline("Present")), RenderPhase.Present);
     }
 
     public void Run()
