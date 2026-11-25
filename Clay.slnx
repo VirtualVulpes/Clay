@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Armature/">
+    <Project Path="external/Armature/Armature.Core/Armature.Core.csproj" />
+    <Project Path="external/Armature/Armature.DebugUi/Armature.DebugUi.csproj" />
+    <Project Path="external/Armature/Armature.Editor/Armature.Editor.csproj" />
+    <Project Path="external/Armature/Armature.Generators/Armature.Generators.csproj" />
+    <Project Path="external/Armature/Armature.Input/Armature.Input.csproj" />
+    <Project Path="external/Armature/Armature.Rendering/Armature.Rendering.csproj" />
+    <Project Path="external/Armature/Armature.Scene/Armature.Scene.csproj" />
+    <Project Path="external/Armature/Armature.SceneRendering/Armature.SceneRendering.csproj" />
+    <Project Path="external/Armature/Armature.Vulkan/Armature.Vulkan.csproj" />
+  </Folder>
+  <Project Path="Clay\Clay.csproj" />
+</Solution>

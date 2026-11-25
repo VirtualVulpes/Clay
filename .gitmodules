@@ -1,0 +1,3 @@
+[submodule "external/Armature"]
+	path = external/Armature
+	url = https://github.com/VirtualVulpes/Armature.git

@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <RootNamespace>Clay</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="models\**\*;textures\**\*" CopyToOutputDirectory="PreserveNewest"/>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\external\Armature\Armature.Core\Armature.Core.csproj"/>
+        <ProjectReference Include="..\external\Armature\Armature.DebugUi\Armature.DebugUi.csproj"/>
+        <ProjectReference Include="..\external\Armature\Armature.Input\Armature.Input.csproj"/>
+        <ProjectReference Include="..\external\Armature\Armature.Scene\Armature.Scene.csproj"/>
+        <ProjectReference Include="..\external\Armature\Armature.SceneRendering\Armature.SceneRendering.csproj"/>
+        <ProjectReference Include="..\external\Armature\Armature.Editor\Armature.Editor.csproj"/>
+        <ProjectReference Include="..\external\Armature\Armature.Rendering\Armature.Rendering.csproj"/>
+        <ProjectReference Include="..\external\Armature\Armature.Vulkan\Armature.Vulkan.csproj"/>
+    </ItemGroup>
+</Project>
