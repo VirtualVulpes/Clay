@@ -13,9 +13,9 @@ using Armature.Vulkan;
 using Brutal.GlfwApi;
 using Brutal.Numerics;
 using Brutal.VulkanApi;
-using BrutalVulkan.Scenes;
+using Clay.Scenes;
 
-namespace BrutalVulkan;
+namespace Clay;
 
 public sealed class App : IDisposable
 {
@@ -50,7 +50,7 @@ public sealed class App : IDisposable
     // Editor
     private EditorDescriptors _editorDescriptors;
     private EditorRenderFeature _editorFeatures;
-    private EditorInput _editorInput;
+    private readonly EditorInput _editorInput;
 
 
     public App()

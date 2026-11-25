@@ -2,7 +2,7 @@ using Armature.Scene;
 using Armature.Scene.Components;
 using Brutal.Numerics;
 
-namespace BrutalVulkan.Scenes;
+namespace Clay.Scenes;
 
 public static class DemoScene
 {
@@ -15,7 +15,7 @@ public static class DemoScene
                     new TransformDef
                     {
                         Position = new float3(0.0f, -2.5f, 0.0f),
-                        Rotation = floatQuat.CreateFromAxisAngle(float3.UnitX, Single.DegreesToRadians(-90.0f)),
+                        Rotation = floatQuat.CreateFromAxisAngle(float3.UnitX, float.DegreesToRadians(-90.0f)),
                         Scale = new float3(10.0f, 10.0f, 1.0f)
                     },
                     new MeshDef("plane"),
@@ -60,7 +60,7 @@ public static class DemoScene
                     new TransformDef
                     {
                         Position = new float3(0.0f, -2.0f, -8.0f),
-                        Rotation = floatQuat.CreateFromAxisAngle(float3.UnitY, Single.DegreesToRadians(-90f)),
+                        Rotation = floatQuat.CreateFromAxisAngle(float3.UnitY, float.DegreesToRadians(-90f)),
                         Scale = new float3(5.0f, 5.0f, 5.0f)
                     },
                     new MeshDef("viking_room"),
@@ -85,7 +85,7 @@ public static class DemoScene
                     {
                         Position = new float3(-6.0f, 1.0f, 0.0f),
                         Rotation = floatQuat.CreateFromAxisAngle(float3.UnitZ,
-                            Single.DegreesToRadians(23.44f)) // earth's axial tilt
+                            float.DegreesToRadians(23.44f)) // earth's axial tilt
                     },
                     new MeshDef("sphere"),
                     new PipelineDef("Wireframe"),
@@ -170,8 +170,8 @@ public static class DemoScene
                         Intensity = 10.0f,
                         Range = 40.0f,
                         Direction = new float3(0.2f, -1.0f, 0.4f),
-                        InnerCos = Single.Cos(Single.DegreesToRadians(40.0f)),
-                        OuterCos = Single.Cos(Single.DegreesToRadians(50.0f))
+                        InnerCos = float.Cos(float.DegreesToRadians(40.0f)),
+                        OuterCos = float.Cos(float.DegreesToRadians(50.0f))
                     }
                 ]),
             new EntityDef(Name: "Main Camera",
@@ -193,8 +193,8 @@ public static class DemoScene
                     new TransformDef
                     {
                         Position = new float3(-6.0f, 6.0f, 10.0f),
-                        Rotation = floatQuat.CreateFromAxisAngle(float3.UnitY, Single.DegreesToRadians(-30.0f)) *
-                                   floatQuat.CreateFromAxisAngle(float3.UnitX, Single.DegreesToRadians(-30.0f)),
+                        Rotation = floatQuat.CreateFromAxisAngle(float3.UnitY, float.DegreesToRadians(-30.0f)) *
+                                   floatQuat.CreateFromAxisAngle(float3.UnitX, float.DegreesToRadians(-30.0f)),
                         Scale = new float3(0.2f, 0.2f, 0.2f)
                     },
                     new MeshDef("cube"),
@@ -208,8 +208,8 @@ public static class DemoScene
                     new TransformDef
                     {
                         Position = new float3(6.0f, 6.0f, 10.0f),
-                        Rotation = floatQuat.CreateFromAxisAngle(float3.UnitY, Single.DegreesToRadians(30.0f)) *
-                                   floatQuat.CreateFromAxisAngle(float3.UnitX, Single.DegreesToRadians(-30.0f)),
+                        Rotation = floatQuat.CreateFromAxisAngle(float3.UnitY, float.DegreesToRadians(30.0f)) *
+                                   floatQuat.CreateFromAxisAngle(float3.UnitX, float.DegreesToRadians(-30.0f)),
                         Scale = new float3(0.2f, 0.2f, 0.2f)
                     },
                     new MeshDef("cube"),

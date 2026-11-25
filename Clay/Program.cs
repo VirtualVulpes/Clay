@@ -1,6 +1,6 @@
 ﻿using Brutal.GlfwApi;
 
-namespace BrutalVulkan;
+namespace Clay;
 
 internal static class Program
 {
