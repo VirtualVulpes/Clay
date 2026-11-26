@@ -1,19 +1,13 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using Armature.DebugUi;
-using Armature.DebugUi.Passes;
 using Armature.Editor;
 using Armature.Input;
 using Armature.Rendering;
-using Armature.Rendering.Passes;
-using Armature.Rendering.Pipelines;
 using Armature.Scene;
 using Armature.Scene.Systems;
 using Armature.SceneRendering;
-using Armature.Vulkan;
 using Brutal.GlfwApi;
 using Brutal.Numerics;
-using Brutal.VulkanApi;
 using Clay.Scenes;
 
 namespace Clay;
@@ -21,131 +15,49 @@ namespace Clay;
 public sealed class App : IDisposable
 {
     private readonly GlfwWindow _window;
-    private GCHandle _gcHandle;
-
     private readonly InputManager _inputManager;
+    private readonly GraphicsBackend _graphics;
+    
+    private readonly AssetLibrary _assets;
 
-    private VulkanContext _context;
-    private CoreDescriptors _coreDescriptors;
-
-    private PipelineManager _pipelineManager;
-    private TextureManager _textureManager;
-    private MeshManager _meshManager;
-
-    private Renderer _renderer;
-    private SceneRenderer _sceneRenderer;
-
-    private ImGuiManager _imGuiManager;
-    private readonly Inspector _inspector;
-    private readonly SceneView _sceneView;
-
-    private CommandBufferManager _cmdManager;
-
+    private readonly SceneRenderer _sceneRenderer;
+    
+    private readonly ImGuiManager _imGuiManager;
+    
     private readonly SystemManager _systemManager;
     private readonly CameraSystem _camera;
     private readonly CameraController _cameraController;
 
-    private World _world;
-    private SelectionHelper _selection;
-
-    // Editor
-    private EditorDescriptors _editorDescriptors;
-    private EditorRenderFeature _editorFeatures;
-    private readonly EditorInput _editorInput;
-
+    private readonly Editor _editor;
 
     public App()
     {
-        _window = Glfw.CreateWindow(
-            new GlfwWindow.CreateInfo
-                { Title = "Brutal Vulkan", Size = new int2(800, 600) }
-        );
-        _gcHandle = GCHandle.Alloc(this);
-        unsafe
-        {
-            _window.UserPointer = GCHandle.ToIntPtr(_gcHandle).ToPointer();
-        }
-
-        _window.OnFramebufferSize += OnFramebufferSize;
+        _window = Glfw.CreateWindow(new GlfwWindow.CreateInfo { Title = "Clay", Size = new int2(800, 600) });
 
         _inputManager = new InputManager(_window);
 
-        _world = new World();
-
-        _selection = new SelectionHelper(_world);
-        _inspector = new Inspector(_world, _selection);
-        _sceneView = new SceneView(_world, _selection, _inputManager);
+        var world = new World();
 
         _systemManager = new SystemManager();
-        _systemManager.AddSystem(new RenderSystem(_world));
-        _systemManager.AddSystem(new RotateSystem(_world));
-        _camera = _systemManager.AddSystem(new CameraSystem(_world));
+        _systemManager.AddSystem(new RenderSystem(world));
+        _systemManager.AddSystem(new RotateSystem(world));
+        _camera = _systemManager.AddSystem(new CameraSystem(world));
 
-        InitVulkan();
+        _graphics = new GraphicsBackend(_window);
 
+        _imGuiManager = new ImGuiManager(_graphics, _window, _inputManager);
+        
+        _assets = new AssetLibrary(_graphics, Path.Join(AppContext.BaseDirectory, "textures"), Path.Join(AppContext.BaseDirectory, "models"));
+        _assets.LoadTextures("brick.ktx2", "statue.ktx2", "viking_room.ktx2");
+        _assets.LoadModel("viking_room", "viking_room.gltf");
+        
+        _sceneRenderer = new SceneRenderer(_graphics, _assets.Meshes);
 
-        var resolver = new AssetResolver(_meshManager, _pipelineManager, _textureManager);
-        new SceneLoader(resolver).Load(DemoScene.Create(), _world);
+        var resolver = new AssetResolver(_assets, _graphics.Pipelines);
+        new SceneLoader(resolver).Load(DemoScene.Create(), world);
 
-        _editorInput =
-            new EditorInput(_inputManager, _world, _editorFeatures.Picker,
-                _selection);
-        _cameraController = new CameraController(_world, _inputManager, _camera);
-    }
-
-    private static unsafe void OnFramebufferSize(GlfwWindow window, int2 size)
-    {
-        var handle = GCHandle.FromIntPtr((nint)window.UserPointer);
-        var app = (App)handle.Target!;
-
-        app._renderer.OnFramebufferResize();
-
-        if (size.X == 0 || size.Y == 0) return;
-
-        app._camera.SetAspectRatio((float)size.X / size.Y);
-    }
-
-    private void InitVulkan()
-    {
-        _context = new VulkanContext(_window);
-        _coreDescriptors = new CoreDescriptors(_context);
-        _editorDescriptors = new EditorDescriptors(_context);
-
-        _pipelineManager = new PipelineManager(_context.Device);
-
-        _cmdManager = new CommandBufferManager(_context.Device, _context.Queue, _context.CommandPool);
-
-        _renderer = new Renderer(_context, _window, _coreDescriptors);
-
-        var pipelineBuildContext = new PipelineBuildContext
-        {
-            ColorFormat = _renderer.Swapchain.SurfaceFormat.Format,
-            MsaaSamples = _renderer.MsaaSamples
-        };
-        _imGuiManager =
-            new ImGuiManager(_context.Allocator, _context.Device, _cmdManager, _window, pipelineBuildContext,
-                _inputManager);
-        CorePipelines.Register(_context.Device, _pipelineManager, pipelineBuildContext, _coreDescriptors);
-        EditorPipelines.Register(_context.Device, _pipelineManager, pipelineBuildContext, _coreDescriptors,
-            _editorDescriptors);
-
-        _meshManager = new MeshManager(_context.Allocator);
-        MeshLibrary.RegisterDefaults(_meshManager);
-
-        LoadTextures();
-        LoadModels();
-
-        _sceneRenderer = new SceneRenderer(_pipelineManager, _meshManager, _context, _coreDescriptors);
-        _renderer.AddListener(_sceneRenderer);
-
-        _renderer.AddListener(_imGuiManager);
-
-        _renderer.AddPass(new OpaquePass(), RenderPhase.Scene);
-
-        _editorFeatures = new EditorRenderFeature(_renderer, _context, _pipelineManager, _coreDescriptors, _editorDescriptors);
-
-        _renderer.AddPass(new ImGuiPass(_imGuiManager), RenderPhase.Overlay);
-        _renderer.AddPass(new PresentPass(_pipelineManager.GetPipeline("Present")), RenderPhase.Present);
+        _cameraController = new CameraController(world, _inputManager, _camera);
+        _editor = new Editor(_graphics, _inputManager, world);
     }
 
     public void Run()
@@ -174,87 +86,28 @@ public sealed class App : IDisposable
             if (_inputManager.IsKeyPressed(GlfwKey.Escape) && !_inputManager.IsUiCapturingKeyboard())
                 _window.ShouldClose = true;
 
-            _editorInput.Update();
-
             _imGuiManager.NewFrame(deltaTime);
 
-            _inspector.Draw();
-            _sceneView.Draw();
+            _editor.Update();
 
-            var camera =
-                _camera.GetActiveCameraData(new float2(_renderer.Swapchain.Extent.Width,
-                    _renderer.Swapchain.Extent.Height));
-            float4x4.Invert(camera.View, out var invView);
-            float4x4.Invert(camera.Proj, out var invProj);
-            var invViewport = new float2(1.0f / camera.ViewportSize.X, 1.0f / camera.ViewportSize.Y);
-            var gpuCamera = new GpuCamera
-            {
-                View = camera.View,
-                Proj = camera.Proj,
-                ViewProj = camera.View * camera.Proj,
-                InvView = invView,
-                InvProj = invProj,
-                Position = camera.Position,
-                InvViewport = invViewport
-            };
-            renderSystem.BuildScene(gpuCamera);
+            renderSystem.BuildScene(_camera.GetActiveCameraData(_graphics.Size));
 
             _sceneRenderer.Submit(renderSystem.Scene);
-            _renderer.DrawFrame(_sceneRenderer.Items, _sceneRenderer.ViewProj);
+            _graphics.Renderer.DrawFrame(_sceneRenderer.Items, _sceneRenderer.ViewProj);
         }
-    }
-
-    private void LoadTextures()
-    {
-        _textureManager = new TextureManager(_context.PhysicalDevice.GetFeatures().TextureCompressionBC);
-
-        var commandBuffer = _cmdManager.BeginSingleTimeCommands();
-
-        foreach (var fileName in new[]
-                 {
-                     "brick.ktx2",
-                     "statue.ktx2",
-                     "viking_room.ktx2"
-                 })
-        {
-            var textureId =
-                _textureManager.AddTexture(fileName, commandBuffer, _context.Allocator, TextureColorSpace.SRgb);
-            _coreDescriptors.UpdateTextureDescriptor(_textureManager.GetTexture(textureId));
-        }
-
-        _cmdManager.EndSingleTimeCommands(commandBuffer);
-        _textureManager.ClearStagingBuffers();
-    }
-
-    private void LoadModels()
-    {
-        var mesh = ModelLoader.LoadModel("viking_room.gltf");
-        _meshManager.AddMesh("viking_room", mesh);
     }
 
     public void Dispose()
     {
-        _context.Device.WaitIdle();
+        _graphics.WaitIdle();
 
+        _editor.Dispose();
         _imGuiManager.Dispose();
-
-        _editorFeatures.Dispose();
-        _editorDescriptors.Dispose();
-
         _sceneRenderer.Dispose();
-        _renderer.Dispose();
-
-        _pipelineManager.Dispose();
-        _textureManager.Dispose();
-        _meshManager.Dispose();
+        _assets.Dispose();
         _inputManager.Dispose();
-
-        _coreDescriptors.Dispose();
-        _context.Dispose();
-
-        _window.OnFramebufferSize -= OnFramebufferSize;
+        _graphics.Dispose();
         _window.Dispose();
-        _gcHandle.Free();
 
         Glfw.Terminate();
     }
