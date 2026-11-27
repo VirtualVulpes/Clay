@@ -17,13 +17,14 @@ public sealed class App : IDisposable
     private readonly GlfwWindow _window;
     private readonly InputManager _inputManager;
     private readonly GraphicsBackend _graphics;
-    
+    private readonly ViewportState _viewport = new();
+
     private readonly AssetLibrary _assets;
 
     private readonly SceneRenderer _sceneRenderer;
-    
+
     private readonly ImGuiManager _imGuiManager;
-    
+
     private readonly SystemManager _systemManager;
     private readonly CameraSystem _camera;
     private readonly CameraController _cameraController;
@@ -32,7 +33,7 @@ public sealed class App : IDisposable
 
     public App()
     {
-        _window = Glfw.CreateWindow(new GlfwWindow.CreateInfo { Title = "Clay", Size = new int2(800, 600) });
+        _window = Glfw.CreateWindow(new GlfwWindow.CreateInfo { Title = "Clay", Size = new int2(1280, 720) });
 
         _inputManager = new InputManager(_window);
 
@@ -46,18 +47,19 @@ public sealed class App : IDisposable
         _graphics = new GraphicsBackend(_window);
 
         _imGuiManager = new ImGuiManager(_graphics, _window, _inputManager);
-        
-        _assets = new AssetLibrary(_graphics, Path.Join(AppContext.BaseDirectory, "textures"), Path.Join(AppContext.BaseDirectory, "models"));
+
+        _assets = new AssetLibrary(_graphics, Path.Join(AppContext.BaseDirectory, "textures"),
+            Path.Join(AppContext.BaseDirectory, "models"));
         _assets.LoadTextures("brick.ktx2", "statue.ktx2", "viking_room.ktx2");
         _assets.LoadModel("viking_room", "viking_room.gltf");
-        
+
         _sceneRenderer = new SceneRenderer(_graphics, _assets.Meshes);
 
         var resolver = new AssetResolver(_assets, _graphics.Pipelines);
         new SceneLoader(resolver).Load(DemoScene.Create(), world);
 
-        _cameraController = new CameraController(world, _inputManager, _camera);
-        _editor = new Editor(_graphics, _inputManager, world);
+        _cameraController = new CameraController(_inputManager, _viewport, world, _camera);
+        _editor = new Editor(_graphics, _inputManager, world, _imGuiManager, _viewport);
     }
 
     public void Run()
@@ -81,7 +83,6 @@ public sealed class App : IDisposable
             Glfw.PollEvents();
 
             _systemManager.Update(deltaTime);
-            _cameraController.Update(deltaTime);
 
             if (_inputManager.IsKeyPressed(GlfwKey.Escape) && !_inputManager.IsUiCapturingKeyboard())
                 _window.ShouldClose = true;
@@ -89,8 +90,9 @@ public sealed class App : IDisposable
             _imGuiManager.NewFrame(deltaTime);
 
             _editor.Update();
+            _cameraController.Update(deltaTime);
 
-            renderSystem.BuildScene(_camera.GetActiveCameraData(_graphics.Size));
+            renderSystem.BuildScene(_camera.GetActiveCameraData(_viewport.IsValid ? _viewport.Size : _graphics.Size));
 
             _sceneRenderer.Submit(renderSystem.Scene);
             _graphics.Renderer.DrawFrame(_sceneRenderer.Items, _sceneRenderer.ViewProj);
